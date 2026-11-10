@@ -1,0 +1,5 @@
+config SHIELD_JISAKU_LEFT
+    def_bool $(shields_list_contains,jisaku_left)
+
+config SHIELD_JISAKU_RIGHT
+    def_bool $(shields_list_contains,jisaku_right)

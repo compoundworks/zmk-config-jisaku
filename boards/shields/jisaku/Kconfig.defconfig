@@ -1,0 +1,16 @@
+if SHIELD_JISAKU_RIGHT
+
+config ZMK_KEYBOARD_NAME
+    default "Jisaku39"
+
+config ZMK_SPLIT_ROLE_CENTRAL
+    default y
+
+endif
+
+if SHIELD_JISAKU_LEFT || SHIELD_JISAKU_RIGHT
+
+config ZMK_SPLIT
+    default y
+
+endif

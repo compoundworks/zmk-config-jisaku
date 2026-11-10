@@ -1,0 +1,60 @@
+/*
+ * 左手（子・peripheral）: キー 28升（c7_r2 はローラーの押し込みと共用）＋5方向キー
+ * ローラー CKW12・横回しホイール EVQ・スティック JT8P
+ */
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "jisaku.dtsi"
+
+&kscan0 {
+    col-gpios
+        = <&gpio0  3 GPIO_ACTIVE_HIGH>   /* col1 D1 */
+        , <&gpio0 28 GPIO_ACTIVE_HIGH>   /* col2 D2 */
+        , <&gpio0 29 GPIO_ACTIVE_HIGH>   /* col3 D3 */
+        , <&gpio1  1 GPIO_ACTIVE_HIGH>   /* col4 D13（左だけ。10-16 に D6 と入れ替えた） */
+        , <&gpio1 12 GPIO_ACTIVE_HIGH>   /* col5 D7 */
+        , <&gpio1 13 GPIO_ACTIVE_HIGH>   /* col6 D8 */
+        , <&gpio1 14 GPIO_ACTIVE_HIGH>   /* col7 D9 */
+        ;
+};
+
+&roller { status = "okay"; };
+&wheel { status = "okay"; };
+
+/* スティック JT8P: X = D4 (P0.04 / AIN2)、Y = D5 (P0.05 / AIN3)。値は MeKaBu の JT8P と同じで始める */
+&adc {
+    status = "okay";
+};
+
+/ {
+    anin0: analog_input_0 {
+        compatible = "zmk,analog-input";
+        sampling-hz = <100>;
+        x-ch {
+            io-channels = <&adc 2>;
+            mv-mid = <1600>;
+            mv-min-max = <1600>;
+            mv-deadzone = <88>;
+            scale-multiplier = <1>;
+            scale-divisor = <800>;
+            invert;
+            evt-type = <INPUT_EV_REL>;
+            input-code = <INPUT_REL_X>;
+        };
+        y-ch {
+            io-channels = <&adc 3>;
+            mv-mid = <1600>;
+            mv-min-max = <1600>;
+            mv-deadzone = <88>;
+            scale-multiplier = <1>;
+            scale-divisor = <800>;
+            invert;
+            evt-type = <INPUT_EV_REL>;
+            input-code = <INPUT_REL_Y>;
+        };
+    };
+};
+
+/* スティックの動きを右（親）へ送る */
+&stick_split {
+    device = <&anin0>;
+};

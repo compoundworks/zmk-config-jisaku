@@ -1,0 +1,14 @@
+file_format: "1"
+id: jisaku
+name: Jisaku v3.9
+type: shield
+url: https://github.com/
+requires: [seeeduino_xiao_ble]
+features:
+  - keys
+  - encoder
+  - pointing
+  - studio
+siblings:
+  - jisaku_left
+  - jisaku_right

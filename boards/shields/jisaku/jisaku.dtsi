@@ -1,0 +1,167 @@
+/*
+ * Jisaku v3.9 (左右分割・無線・XIAO nRF52840 Plus)
+ * 足の割り当ての正 = ergogen/v3_9/routed/{L,R}.kicad_pcb（2026-10-20 に線を引いた基板）
+ * XIAO の D 番号と nRF の足:
+ *   D0 P0.02 / D1 P0.03 / D2 P0.28 / D3 P0.29 / D4 P0.04 / D5 P0.05 / D6 P1.11 / D7 P1.12
+ *   D8 P1.13 / D9 P1.14 / D10 P1.15 / D11 P0.15 / D12 P0.19 / D13 P1.01 / D14 P0.09 (NFC1)
+ *   D15 P0.10 (NFC2) / D17 P1.03 / D18 P1.05 / D19 P1.07   (D16 P0.31 = 電池の電圧なので使わない)
+ * 行列は COL2ROW（ダイオードは列 → 行）。行は両手とも同じ足:
+ *   row1 D10 P1.15 / row2 D15 P0.10 / row3 D17 P1.03 / row4 D18 P1.05 / row5 D19 P1.07（5方向キー）
+ * 列は左右の .overlay に書く。左の列番号 col1..7 → 0..6、右の col0..6 → 7..13（col-offset 7）。
+ */
+
+#include <dt-bindings/zmk/matrix_transform.h>
+#include <physical_layouts.dtsi>
+
+/ {
+    chosen {
+        zmk,physical-layout = &jisaku_layout;
+    };
+
+    /*
+     * 並び（keymap の bindings の順）:
+     *   1行目  左 c1..c7          | 右 c1..c5
+     *   2行目  左 c1..c7          | 右 c1..c6
+     *   3行目  左 c1..c7          | 右 c0..c6
+     *   4行目  左 c1 c2 c3 c4 c6 c7 c8 | 右 親指 t1 t2 t3・c4 c5 c6
+     *   5方向  左 FW1..FW5        | 右 FW1..FW5
+     * 左 c7_r2 はキーかローラー CKW12 の押し込み（同じ升）。左 c8_r4 は列5につながる（c5_r4 はスティックの所で空き）。
+     * 空いている升（左 r5c1 r5c2・右 r1c0 r1c6 r2c0 r4c3 r5c5 r5c6）は今は並びに入れていない。
+     */
+    default_transform: keymap_transform_0 {
+        compatible = "zmk,matrix-transform";
+        columns = <14>;
+        rows = <5>;
+        map = <
+            RC(0,0) RC(0,1) RC(0,2) RC(0,3) RC(0,4) RC(0,5) RC(0,6) RC(0,8) RC(0,9) RC(0,10) RC(0,11) RC(0,12)
+            RC(1,0) RC(1,1) RC(1,2) RC(1,3) RC(1,4) RC(1,5) RC(1,6) RC(1,8) RC(1,9) RC(1,10) RC(1,11) RC(1,12) RC(1,13)
+            RC(2,0) RC(2,1) RC(2,2) RC(2,3) RC(2,4) RC(2,5) RC(2,6) RC(2,7) RC(2,8) RC(2,9) RC(2,10) RC(2,11) RC(2,12) RC(2,13)
+            RC(3,0) RC(3,1) RC(3,2) RC(3,3) RC(3,5) RC(3,6) RC(3,4) RC(3,7) RC(3,8) RC(3,9) RC(3,11) RC(3,12) RC(3,13)
+            RC(4,2) RC(4,3) RC(4,4) RC(4,5) RC(4,6) RC(4,7) RC(4,8) RC(4,9) RC(4,10) RC(4,11)
+        >;
+    };
+
+    jisaku_layout: jisaku_layout {
+        compatible = "zmk,physical-layout";
+        display-name = "Jisaku v3.9";
+        transform = <&default_transform>;
+        kscan = <&kscan0>;
+        /* 位置は基板の実寸（キーの間隔 横 18mm＝100・縦 17mm＝100）。5方向キーは小さい升で、向きは仮 */
+        keys  //                     w   h     x    y  rot rx ry
+            = <&key_physical_attrs 100 100     0    0  0 0 0>  /*  0 L c1_r1 */
+            , <&key_physical_attrs 100 100   100    0  0 0 0>  /*  1 L c2_r1 */
+            , <&key_physical_attrs 100 100   200    0  0 0 0>  /*  2 L c3_r1 */
+            , <&key_physical_attrs 100 100   300    0  0 0 0>  /*  3 L c4_r1 */
+            , <&key_physical_attrs 100 100   400    0  0 0 0>  /*  4 L c5_r1 */
+            , <&key_physical_attrs 100 100   500    0  0 0 0>  /*  5 L c6_r1 */
+            , <&key_physical_attrs 100 100   600    0  0 0 0>  /*  6 L c7_r1 */
+            , <&key_physical_attrs 100 100  1098    0  0 0 0>  /*  7 R c1_r1 */
+            , <&key_physical_attrs 100 100  1198    0  0 0 0>  /*  8 R c2_r1 */
+            , <&key_physical_attrs 100 100  1298    0  0 0 0>  /*  9 R c3_r1 */
+            , <&key_physical_attrs 100 100  1398    0  0 0 0>  /* 10 R c4_r1 */
+            , <&key_physical_attrs 100 100  1498    0  0 0 0>  /* 11 R c5_r1 */
+            , <&key_physical_attrs 100 100     0  100  0 0 0>  /* 12 L c1_r2 */
+            , <&key_physical_attrs 100 100   100  100  0 0 0>  /* 13 L c2_r2 */
+            , <&key_physical_attrs 100 100   200  100  0 0 0>  /* 14 L c3_r2 */
+            , <&key_physical_attrs 100 100   300  100  0 0 0>  /* 15 L c4_r2 */
+            , <&key_physical_attrs 100 100   400  100  0 0 0>  /* 16 L c5_r2 */
+            , <&key_physical_attrs 100 100   500  100  0 0 0>  /* 17 L c6_r2 */
+            , <&key_physical_attrs 100 100   600  100  0 0 0>  /* 18 L c7_r2 */
+            , <&key_physical_attrs 100 100  1098  100  0 0 0>  /* 19 R c1_r2 */
+            , <&key_physical_attrs 100 100  1198  100  0 0 0>  /* 20 R c2_r2 */
+            , <&key_physical_attrs 100 100  1298  100  0 0 0>  /* 21 R c3_r2 */
+            , <&key_physical_attrs 100 100  1398  100  0 0 0>  /* 22 R c4_r2 */
+            , <&key_physical_attrs 100 100  1498  100  0 0 0>  /* 23 R c5_r2 */
+            , <&key_physical_attrs 100 100  1598  100  0 0 0>  /* 24 R c6_r2 */
+            , <&key_physical_attrs 100 100     0  200  0 0 0>  /* 25 L c1_r3 */
+            , <&key_physical_attrs 100 100   100  200  0 0 0>  /* 26 L c2_r3 */
+            , <&key_physical_attrs 100 100   200  200  0 0 0>  /* 27 L c3_r3 */
+            , <&key_physical_attrs 100 100   300  200  0 0 0>  /* 28 L c4_r3 */
+            , <&key_physical_attrs 100 100   400  200  0 0 0>  /* 29 L c5_r3 */
+            , <&key_physical_attrs 100 100   500  200  0 0 0>  /* 30 L c6_r3 */
+            , <&key_physical_attrs 100 100   600  200  0 0 0>  /* 31 L c7_r3 */
+            , <&key_physical_attrs 100 100   998  200  0 0 0>  /* 32 R c0_r3 */
+            , <&key_physical_attrs 100 100  1098  200  0 0 0>  /* 33 R c1_r3 */
+            , <&key_physical_attrs 100 100  1198  200  0 0 0>  /* 34 R c2_r3 */
+            , <&key_physical_attrs 100 100  1298  200  0 0 0>  /* 35 R c3_r3 */
+            , <&key_physical_attrs 100 100  1398  200  0 0 0>  /* 36 R c4_r3 */
+            , <&key_physical_attrs 100 100  1498  200  0 0 0>  /* 37 R c5_r3 */
+            , <&key_physical_attrs 100 100  1598  200  0 0 0>  /* 38 R c6_r3 */
+            , <&key_physical_attrs 100 100     0  300  0 0 0>  /* 39 L c1_r4 */
+            , <&key_physical_attrs 100 100   100  300  0 0 0>  /* 40 L c2_r4 */
+            , <&key_physical_attrs 100 100   200  300  0 0 0>  /* 41 L c3_r4 */
+            , <&key_physical_attrs 100 100   300  300  0 0 0>  /* 42 L c4_r4 */
+            , <&key_physical_attrs 100 100   500  300  0 0 0>  /* 43 L c6_r4 */
+            , <&key_physical_attrs 100 100   600  300  0 0 0>  /* 44 L c7_r4 */
+            , <&key_physical_attrs 100 100   700  300  0 0 0>  /* 45 L c8_r4 */
+            , <&key_physical_attrs 100 100   929  300  0 0 0>  /* 46 R t1_r4 */
+            , <&key_physical_attrs 100 100  1029  300  0 0 0>  /* 47 R t2_r4 */
+            , <&key_physical_attrs 100 100  1129  300  0 0 0>  /* 48 R t3_r4 */
+            , <&key_physical_attrs 100 100  1398  300  0 0 0>  /* 49 R c4_r4 */
+            , <&key_physical_attrs 100 100  1498  300  0 0 0>  /* 50 R c5_r4 */
+            , <&key_physical_attrs 100 100  1598  300  0 0 0>  /* 51 R c6_r4 */
+            , <&key_physical_attrs  45  45   748  108  0 0 0>  /* 52 L FW1 */
+            , <&key_physical_attrs  45  45   793  153  0 0 0>  /* 53 L FW2 */
+            , <&key_physical_attrs  45  45   748  198  0 0 0>  /* 54 L FW3 */
+            , <&key_physical_attrs  45  45   703  153  0 0 0>  /* 55 L FW4 */
+            , <&key_physical_attrs  45  45   748  153  0 0 0>  /* 56 L FW5 */
+            , <&key_physical_attrs  45  45   903  108  0 0 0>  /* 57 R FW1 */
+            , <&key_physical_attrs  45  45   948  153  0 0 0>  /* 58 R FW2 */
+            , <&key_physical_attrs  45  45   903  198  0 0 0>  /* 59 R FW3 */
+            , <&key_physical_attrs  45  45   858  153  0 0 0>  /* 60 R FW4 */
+            , <&key_physical_attrs  45  45   903  153  0 0 0>  /* 61 R FW5 */
+            ;
+    };
+
+    kscan0: kscan0 {
+        compatible = "zmk,kscan-gpio-matrix";
+        diode-direction = "col2row";
+        wakeup-source;
+        row-gpios
+            = <&gpio1 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>   /* row1 D10 */
+            , <&gpio0 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>   /* row2 D15 (NFC2) */
+            , <&gpio1  3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>   /* row3 D17 */
+            , <&gpio1  5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>   /* row4 D18 */
+            , <&gpio1  7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>   /* row5 D19 = 5方向キーの共通 */
+            ;
+    };
+
+    /* 左だけで使う2つ（右では disabled のまま） */
+    roller: roller {
+        compatible = "alps,ec11";
+        a-gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;   /* D0 ROL_A */
+        b-gpios = <&gpio0 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;   /* D14 ROL_B */
+        steps = <12>;   /* roBa（CKW12 の作者）と同じ */
+        status = "disabled";
+    };
+
+    wheel: wheel {
+        compatible = "alps,ec11";
+        a-gpios = <&gpio0 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;  /* D11 EVQ_A */
+        b-gpios = <&gpio0 19 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;  /* D12 EVQ_B */
+        steps = <30>;   /* MeKaBu と同じ 3パルスで1回 */
+        status = "disabled";
+    };
+
+    sensors: sensors {
+        compatible = "zmk,keymap-sensors";
+        sensors = <&roller &wheel>;
+        triggers-per-rotation = <10>;
+    };
+
+    /* 左のスティックを右（親）へ送る口 */
+    split_inputs {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        stick_split: stick_split@0 {
+            compatible = "zmk,input-split";
+            reg = <0>;
+        };
+    };
+};
+
+/* 行列と重なる足を使う既定の口を止める */
+&uart0 { status = "disabled"; };   /* D6 D7 = 列 */
+&i2c0 { status = "disabled"; };    /* D4 D5 = スティック / 玉のセンサー */
+&spi2 { status = "disabled"; };    /* D8 D9 D10 = 列と行 */

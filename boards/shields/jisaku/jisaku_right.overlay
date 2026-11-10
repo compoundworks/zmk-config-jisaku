@@ -1,0 +1,134 @@
+/*
+ * 右手（親・central。USB をつなぐと ZMK Studio で割り当てを変えられる）: キー 24＋5方向キー
+ * 玉のセンサー PMW3610（SPI）・トラックパッド IQS525（I2C）
+ */
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <input/processors.dtsi>
+#include "jisaku.dtsi"
+
+&default_transform {
+    col-offset = <7>;
+};
+
+&kscan0 {
+    col-gpios
+        = <&gpio0  3 GPIO_ACTIVE_HIGH>   /* col0 D1 */
+        , <&gpio0 28 GPIO_ACTIVE_HIGH>   /* col1 D2 */
+        , <&gpio0 29 GPIO_ACTIVE_HIGH>   /* col2 D3 */
+        , <&gpio1 11 GPIO_ACTIVE_HIGH>   /* col3 D6 */
+        , <&gpio1 12 GPIO_ACTIVE_HIGH>   /* col4 D7 */
+        , <&gpio1 13 GPIO_ACTIVE_HIGH>   /* col5 D8 */
+        , <&gpio1 14 GPIO_ACTIVE_HIGH>   /* col6 D9 */
+        ;
+};
+
+&pinctrl {
+    /* PMW3610: SCLK = D5 P0.05、SDIO = D4 P0.04（1本で送りと受け）。roBa と同じ足 */
+    spi0_default: spi0_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 0, 5)>,
+                    <NRF_PSEL(SPIM_MOSI, 0, 4)>,
+                    <NRF_PSEL(SPIM_MISO, 0, 4)>;
+        };
+    };
+    spi0_sleep: spi0_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 0, 5)>,
+                    <NRF_PSEL(SPIM_MOSI, 0, 4)>,
+                    <NRF_PSEL(SPIM_MISO, 0, 4)>;
+            low-power-enable;
+        };
+    };
+
+    /* トラックパッド: SDA = D11 P0.15、SCL = D12 P0.19（基板の R1 R2 4.7kΩ で 3.3V へ） */
+    i2c1_default: i2c1_default {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 15)>,
+                    <NRF_PSEL(TWIM_SCL, 0, 19)>;
+        };
+    };
+    i2c1_sleep: i2c1_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 15)>,
+                    <NRF_PSEL(TWIM_SCL, 0, 19)>;
+            low-power-enable;
+        };
+    };
+};
+
+&spi0 {
+    status = "okay";
+    compatible = "nordic,nrf-spim";
+    pinctrl-0 = <&spi0_default>;
+    pinctrl-1 = <&spi0_sleep>;
+    pinctrl-names = "default", "sleep";
+    cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;   /* NCS = D14 P0.09 (NFC1) */
+
+    trackball: trackball@0 {
+        status = "okay";
+        compatible = "pixart,pmw3610";
+        reg = <0>;
+        spi-max-frequency = <2000000>;
+        irq-gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;   /* MOTION = D0 P0.02 */
+        cpi = <800>;
+        evt-type = <INPUT_EV_REL>;
+        x-input-code = <INPUT_REL_X>;
+        y-input-code = <INPUT_REL_Y>;
+    };
+};
+
+&spi1 { status = "disabled"; };   /* i2c1 と同じ回路なので止める */
+
+&i2c1 {
+    status = "okay";
+    compatible = "nordic,nrf-twi";
+    pinctrl-0 = <&i2c1_default>;
+    pinctrl-1 = <&i2c1_sleep>;
+    pinctrl-names = "default", "sleep";
+    clock-frequency = <I2C_BITRATE_FAST>;
+
+    trackpad: iqs5xx@74 {
+        status = "okay";
+        compatible = "azoteq,iqs5xx";
+        reg = <0x74>;
+        rdy-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;   /* RDY = D13 P1.01（リセットの足は基板に出ていない） */
+        one-finger-tap;
+        two-finger-tap;
+        press-and-hold;
+        scroll;
+        natural-scroll-x;
+        natural-scroll-y;
+    };
+};
+
+/ {
+    /* 玉: 普段はカーソル。動かすと 0.7 秒だけ「マウス」の層（7）が開く。「スクロール」の層（6）では縦横のスクロール */
+    trackball_listener: trackball_listener {
+        compatible = "zmk,input-listener";
+        device = <&trackball>;
+        input-processors = <&zip_temp_layer 7 700>;
+
+        scroller {
+            layers = <6>;
+            input-processors = <&zip_xy_scaler 1 8 &zip_xy_to_scroll_mapper>;   /* 先に小さくしてからスクロールに変える */
+        };
+    };
+
+    /* トラックパッド: カーソル・1本指タップ＝左クリック・2本指タップ＝右クリック・2本指でスクロール */
+    trackpad_listener: trackpad_listener {
+        compatible = "zmk,input-listener";
+        device = <&trackpad>;
+    };
+
+    /* 左のスティック: 普段はスクロール（MeKaBu と同じ）。「スクロール」の層（6）ではカーソル */
+    stick_listener: stick_listener {
+        compatible = "zmk,input-listener";
+        device = <&stick_split>;
+        input-processors = <&zip_xy_to_scroll_mapper>;
+
+        pointer {
+            layers = <6>;
+            input-processors = <&zip_xy_scaler 1 1>;
+        };
+    };
+};

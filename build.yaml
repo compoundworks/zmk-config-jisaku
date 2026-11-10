@@ -1,0 +1,10 @@
+---
+include:
+  # right = central (USB / ZMK Studio)
+  - board: seeeduino_xiao_ble
+    shield: jisaku_right
+    snippet: studio-rpc-usb-uart
+  - board: seeeduino_xiao_ble
+    shield: jisaku_left
+  - board: seeeduino_xiao_ble
+    shield: settings_reset
